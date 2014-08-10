@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" media="screen" href="css/graph.css" />
+        <script src="js/d3.min.js" charset="utf-8"></script>
+        <script src="js/papaparse.min.js"></script>
+    </head>
+    <body>
+        <script>
+            function loadCSV(file, fileType) {
+                var request;
+                if (window.XMLHttpRequest) {
+                    // IE7+, Firefox, Chrome, Opera, Safari
+                    request = new XMLHttpRequest();
+                    } else {
+                    // code for IE6, IE5
+                    request = new ActiveXObject('Microsoft.XMLHTTP');
+                }
+                // load
+                request.open('GET', file, false);
+                request.send();
+                if (fileType == "nodes") {
+                    return parseNodesCSV(request.responseText);
+                    } else if (fileType == "edges") {
+                    return parseEdgesCSV(request.responseText);
+                }
+            }
+
+            function parseEdgesCSV (data) {
+                var parsedData = Papa.parse(data, {});
+                var links = [];
+                for (var i = 0; i < parsedData.data.length; i++) {
+                    var node1 = parsedData.data[i][0];
+                    var node2 = parsedData.data[i][1];
+                    links.push({
+                        source: node1,
+                        target: node2
+                    });
+                }
+                return links;
+            }
+
+            var positionsToIDs = {}
+            function parseNodesCSV(data){
+                var parsedData = Papa.parse(data, {});
+                var names = [];
+                for (var i = 0; i < parsedData.data.length; i++) {
+                    names.push({
+                        name: parsedData.data[i][1]
+                    });
+                    positionsToIDs[i] = parsedData.data[i][0];
+                }
+                return names;
+            }
+
+            var nodes_json =  loadCSV("data/nodes.csv", "nodes");
+            var edges_json = loadCSV("data/edges.csv", "edges");
+
+            for (var i = 0; i < nodes_json.length; i++) {
+                for (var j = 0; j < edges_json.length; j++) {
+                    if (edges_json[j].source == positionsToIDs[i]) {
+                        edges_json[j].source = i;
+                    }
+                    if (edges_json[j].target == positionsToIDs[i]) {
+                        edges_json[j].target = i;
+                    }
+                }
+            }
+            var result_json = {nodes: nodes_json, links : edges_json};
+
+            var height = 2750;
+            var width = 2750;
+
+            var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+            var force = d3.layout.force()
+            .gravity(1)
+            .linkDistance(30)
+            .charge(-2000)
+            .size([width, height]);
+
+            force
+            .nodes(result_json.nodes)
+            .links(result_json.links)
+            .start();
+
+            var link = svg.selectAll(".link")
+            .data(result_json.links)
+            .enter().append("line")
+            .attr("class", "link");
+
+            var node = svg.selectAll(".node")
+            .data(result_json.nodes)
+            .enter().append("g")
+            .attr("class", "node")
+            .call(force.drag);
+
+            node.append("circle")
+            .attr("r", 6);
+
+            node.append("text")
+            .attr("dx", 12)
+            .attr("dy", ".35em")
+            .text(function(d) {
+                return d.name;
+            });
+
+            force.on("tick", function() {
+                link.attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+
+                node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+            });
+
+        </script>
+    </body>
+</html>
