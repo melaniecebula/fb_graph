@@ -8,6 +8,7 @@
     </head>
     <body>
         <script>
+            // Will parse a given CSV file
             function loadCSV(file, fileType) {
                 var request;
                 if (window.XMLHttpRequest) {
@@ -17,57 +18,71 @@
                     // code for IE6, IE5
                     request = new ActiveXObject('Microsoft.XMLHTTP');
                 }
-                // load
                 request.open('GET', file, false);
                 request.send();
+                // Parse either nodes or edges csv file
                 if (fileType == "nodes") {
                     return parseNodesCSV(request.responseText);
-                    } else if (fileType == "edges") {
+                } else if (fileType == "edges") {
                     return parseEdgesCSV(request.responseText);
+                } else {
+                    console.log("Unknown csv file sent to loadCSV");
                 }
+
             }
 
+            // Returns a list of links between two nodes
             function parseEdgesCSV (data) {
                 var parsedData = Papa.parse(data, {});
                 var links = [];
                 for (var i = 0; i < parsedData.data.length; i++) {
-                    var node1 = parsedData.data[i][0];
-                    var node2 = parsedData.data[i][1];
+                    var node = parsedData.data[i];
                     links.push({
-                        source: node1,
-                        target: node2
+                        source: node[0],
+                        target: node[1]
                     });
                 }
                 return links;
             }
 
+            // A mapping from node positions in the array to their IDs
             var positionsToIDs = {}
+
+            // Returns a list of nodes and populates positionsToIDs map
             function parseNodesCSV(data){
                 var parsedData = Papa.parse(data, {});
-                var names = [];
+                var nodes = [];
                 for (var i = 0; i < parsedData.data.length; i++) {
-                    names.push({
-                        name: parsedData.data[i][1]
+                    var node = parsedData.data[i];
+                    nodes.push({
+                        fbid: node[0],
+                        name: node[1],
+                        gender: node[2]
                     });
-                    positionsToIDs[i] = parsedData.data[i][0];
+                    positionsToIDs[i] = node[0];
                 }
-                return names;
+                return nodes;
             }
 
             var nodes_json =  loadCSV("data/nodes.csv", "nodes");
-            var edges_json = loadCSV("data/edges.csv", "edges");
+            var links_json = loadCSV("data/edges.csv", "edges");
 
+            // Replacing node fbids in the links array with their positions
             for (var i = 0; i < nodes_json.length; i++) {
-                for (var j = 0; j < edges_json.length; j++) {
-                    if (edges_json[j].source == positionsToIDs[i]) {
-                        edges_json[j].source = i;
+                for (var j = 0; j < links_json.length; j++) {
+                    var link = links_json[j];
+                    var fbidForPosition = positionsToIDs[i];
+                    if (link.source == fbidForPosition) {
+                        link.source = i;
                     }
-                    if (edges_json[j].target == positionsToIDs[i]) {
-                        edges_json[j].target = i;
+                    if (link.target == fbidForPosition) {
+                        link.target = i;
                     }
                 }
             }
-            var result_json = {nodes: nodes_json, links : edges_json};
+
+            // Used to pass nodes and links to d3
+            var result_json = {nodes: nodes_json, links : links_json};
 
             var height = 2750;
             var width = 2750;
@@ -76,6 +91,7 @@
             .attr("width", width)
             .attr("height", height);
 
+            // Setting d3 layout force
             var force = d3.layout.force()
             .gravity(1)
             .linkDistance(30)
@@ -98,9 +114,11 @@
             .attr("class", "node")
             .call(force.drag);
 
+            // Node represented as a circle
             node.append("circle")
             .attr("r", 6);
 
+            // Node text uses the name of the node (Facebook name)
             node.append("text")
             .attr("dx", 12)
             .attr("dy", ".35em")
@@ -108,6 +126,7 @@
                 return d.name;
             });
 
+            // Updating the position of the graph
             force.on("tick", function() {
                 link.attr("x1", function(d) { return d.source.x; })
                 .attr("y1", function(d) { return d.source.y; })
@@ -116,7 +135,6 @@
 
                 node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
             });
-
         </script>
     </body>
 </html>
