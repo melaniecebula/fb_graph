@@ -20,7 +20,7 @@ High School is a Clusterfuck or Why My Link Distance Had to be so Large
 Music Performance is really spread out because I have friends from music in elementary/middle/highschool, SCYSO, PSYO, UCBSO, All-state, Colburn, and double bass meetups, so a lot of them know each other but are potentially part of a larger grouping (High School or UC Berkeley)
 ![Alt text](/screenshots/fb_graph_music.png?raw=true "Music Performance")
 
-Facebook, and you can almost sub-groups like Pages, Pages Mobile, iOS, FBU
+Facebook, and you can see sub-groups like Pages Mobile and FBU
 ![Alt text](/screenshots/fb_graph_facebook.png?raw=true "Facebook")
 
 My friends from swing dancing are part of the larger UC Berkeley group, but are all next together because they have a lot of shared connections
